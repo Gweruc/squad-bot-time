@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор времени</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Делаем так, чтобы цвета подстраивались под темную/светлую тему юзера */
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 40px 20px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        h2 { margin-bottom: 30px; }
+        
+        /* Та самая магия: поле типа "time" на мобилках открывает круглый циферблат */
+        input[type="time"] {
+            font-size: 36px;
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 2px solid var(--tg-theme-button-color, #3390ec);
+            background: var(--tg-theme-secondary-bg-color, #f4f4f5);
+            color: var(--tg-theme-text-color, #000000);
+            margin-bottom: 40px;
+            outline: none;
+        }
+        
+        button {
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Во сколько старт?</h2>
+    
+    <input type="time" id="timePicker" value="19:00" required>
+    
+    <br>
+    
+    <button onclick="sendTimeToBot()">Подтвердить</button>
+
+    <script>
+        // Инициализируем Telegram Web App
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // Растягиваем на весь экран
+        tg.ready();
+
+        // Функция, которая сработает по клику
+        function sendTimeToBot() {
+            let selectedTime = document.getElementById("timePicker").value;
+            
+            if (selectedTime) {
+                // Отправляем выбранное время обратно в наш Python-код!
+                tg.sendData(selectedTime);
+            } else {
+                tg.showAlert("Пожалуйста, выберите время!");
+            }
+        }
+    </script>
+</body>
+</html>
