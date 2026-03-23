@@ -2,81 +2,123 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Выбор времени</title>
-    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <link href="https://cdn.jsdelivr.net/npm/mdtimepicker@2.0.2/dist/mdtimepicker.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mdtimepicker@2.0.2/dist/mdtimepicker.min.js"></script>
-    
     <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            padding: 40px 20px;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-        }
+        body { font-family: sans-serif; text-align: center; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); margin: 0; padding: 20px; touch-action: manipulation; }
+        h2 { margin-top: 10px; font-size: 22px; }
         
-        #timePicker {
-            font-size: 32px;
-            padding: 15px 20px;
-            border-radius: 12px;
-            border: 2px solid var(--tg-theme-button-color, #3390ec);
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 30px;
-            background: var(--tg-theme-secondary-bg-color, #f4f4f5);
-            color: var(--tg-theme-text-color, #000000);
-            width: 150px;
-            outline: none;
-        }
+        /* Поле с выбранным временем (кликабельно) */
+        #display { font-size: 45px; font-weight: bold; color: var(--tg-theme-button-color, #3390ec); margin: 10px 0 30px 0; cursor: pointer; }
         
-        button {
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 15px 40px;
-            font-size: 20px;
-            border-radius: 12px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-        }
+        /* Сам круг */
+        .clock { position: relative; width: 260px; height: 260px; background: var(--tg-theme-secondary-bg-color, #f0f0f0); border-radius: 50%; margin: 0 auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+        .center-dot { position: absolute; width: 10px; height: 10px; background: var(--tg-theme-button-color, #3390ec); border-radius: 50%; left: 125px; top: 125px; }
+        
+        /* Цифры на круге */
+        .number { position: absolute; width: 40px; height: 40px; border-radius: 50%; line-height: 40px; text-align: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.1s; }
+        .number:active { background: var(--tg-theme-button-color, #3390ec); color: #ffffff; transform: scale(1.1); }
+        
+        /* Кнопка */
+        .btn { margin-top: 40px; background: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); border: none; padding: 15px; font-size: 20px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <h2>Во сколько старт?</h2>
     
-    <input type="text" id="timePicker" value="19:00" readonly>
+    <div id="display" onclick="setMode('hours')">19:00</div>
     
-    <br>
-    <button onclick="sendTimeToBot()">Подтвердить</button>
+    <div class="clock" id="clock">
+        <div class="center-dot"></div>
+    </div>
+    
+    <button class="btn" onclick="sendTime()">✅ Подтвердить</button>
 
     <script>
-        // Говорим Телеграму растянуть окно
         let tg = window.Telegram.WebApp;
-        tg.expand(); 
+        tg.expand();
 
-        // Запускаем отрисовку циферблата (чистый JS)
-        mdtimepicker('#timePicker', {
-            is24hour: true,
-            format: 'hh:mm',
-            theme: 'blue',
-            clearBtn: false
-        });
+        let currentHour = 19;
+        let currentMinute = 0;
+        let mode = 'hours'; // Сначала выбираем часы, потом минуты
+        let clock = document.getElementById('clock');
+        let display = document.getElementById('display');
+
+        function updateDisplay() {
+            let h = currentHour.toString().padStart(2, '0');
+            let m = currentMinute.toString().padStart(2, '0');
+            display.innerText = `${h}:${m}`;
+        }
+
+        function setMode(newMode) {
+            mode = newMode;
+            drawClock();
+        }
+
+        // Рисуем цифры по кругу
+        function drawClock() {
+            // Очищаем старые цифры, оставляем только точку по центру
+            clock.innerHTML = '<div class="center-dot"></div>';
+            
+            let values = [];
+            if (mode === 'hours') {
+                // Внешний круг (12-23 часа) и внутренний круг (0-11 часов)
+                values = [
+                    {v:0, r:100, a:-90}, {v:13, r:100, a:-60}, {v:14, r:100, a:-30}, {v:15, r:100, a:0},
+                    {v:16, r:100, a:30}, {v:17, r:100, a:60}, {v:18, r:100, a:90}, {v:19, r:100, a:120},
+                    {v:20, r:100, a:150}, {v:21, r:100, a:180}, {v:22, r:100, a:210}, {v:23, r:100, a:240},
+                    
+                    {v:12, r:60, a:-90}, {v:1, r:60, a:-60}, {v:2, r:60, a:-30}, {v:3, r:60, a:0},
+                    {v:4, r:60, a:30}, {v:5, r:60, a:60}, {v:6, r:60, a:90}, {v:7, r:60, a:120},
+                    {v:8, r:60, a:150}, {v:9, r:60, a:180}, {v:10, r:60, a:210}, {v:11, r:60, a:240}
+                ];
+            } else {
+                // Минуты (с шагом в 5)
+                values = [
+                    {v:0, r:100, a:-90}, {v:5, r:100, a:-60}, {v:10, r:100, a:-30}, {v:15, r:100, a:0},
+                    {v:20, r:100, a:30}, {v:25, r:100, a:60}, {v:30, r:100, a:90}, {v:35, r:100, a:120},
+                    {v:40, r:100, a:150}, {v:45, r:100, a:180}, {v:50, r:100, a:210}, {v:55, r:100, a:240}
+                ];
+            }
+
+            // Математика расстановки цифр
+            values.forEach(item => {
+                let num = document.createElement('div');
+                num.className = 'number';
+                num.innerText = item.v.toString().padStart(2, '0');
+                
+                let rad = item.a * (Math.PI / 180);
+                let x = 110 + item.r * Math.cos(rad);
+                let y = 110 + item.r * Math.sin(rad);
+                
+                num.style.left = x + 'px';
+                num.style.top = y + 'px';
+                
+                // Действие по клику на цифру
+                num.onclick = () => {
+                    if (mode === 'hours') {
+                        currentHour = item.v;
+                        setMode('minutes'); // Переключаем на минуты
+                    } else {
+                        currentMinute = item.v;
+                    }
+                    updateDisplay();
+                };
+                clock.appendChild(num);
+            });
+        }
 
         // Отправка в бота
-        function sendTimeToBot() {
-            let selectedTime = document.getElementById('timePicker').value;
-            if (selectedTime) {
-                tg.sendData(selectedTime);
-            } else {
-                tg.showAlert("Выберите время!");
-            }
+        function sendTime() {
+            let h = currentHour.toString().padStart(2, '0');
+            let m = currentMinute.toString().padStart(2, '0');
+            tg.sendData(`${h}:${m}`);
         }
+
+        // Рисуем часы при старте
+        drawClock();
     </script>
 </body>
 </html>
