@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выбор времени</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/gh/dmuy/MDTimePicker@v2.0.0/mdtimepicker.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/dmuy/MDTimePicker@v2.0.0/mdtimepicker.min.js"></script>
+    
     <style>
-        /* Делаем так, чтобы цвета подстраивались под темную/светлую тему юзера */
         body {
             font-family: sans-serif;
             text-align: center;
@@ -14,18 +18,18 @@
             background-color: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
         }
-        h2 { margin-bottom: 30px; }
         
-        /* Та самая магия: поле типа "time" на мобилках открывает круглый циферблат */
-        input[type="time"] {
-            font-size: 36px;
-            padding: 10px 20px;
-            border-radius: 15px;
+        #timePicker {
+            font-size: 30px;
+            padding: 15px 20px;
+            border-radius: 10px;
             border: 2px solid var(--tg-theme-button-color, #3390ec);
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 30px;
             background: var(--tg-theme-secondary-bg-color, #f4f4f5);
             color: var(--tg-theme-text-color, #000000);
-            margin-bottom: 40px;
-            outline: none;
+            width: 150px;
         }
         
         button {
@@ -34,7 +38,6 @@
             border: none;
             padding: 15px 40px;
             font-size: 20px;
-            font-weight: bold;
             border-radius: 12px;
             cursor: pointer;
             width: 100%;
@@ -45,27 +48,31 @@
 
     <h2>Во сколько старт?</h2>
     
-    <input type="time" id="timePicker" value="19:00" required>
+    <input type="text" id="timePicker" value="19:00" readonly>
     
     <br>
-    
     <button onclick="sendTimeToBot()">Подтвердить</button>
 
     <script>
-        // Инициализируем Telegram Web App
         let tg = window.Telegram.WebApp;
-        tg.expand(); // Растягиваем на весь экран
-        tg.ready();
+        tg.expand(); 
 
-        // Функция, которая сработает по клику
+        // Запускаем отрисовку круглого циферблата (24-часовой формат)
+        $(document).ready(function(){
+            $('#timePicker').mdtimepicker({
+                is24hour: true,
+                format: 'hh:mm',
+                theme: 'blue',
+                clearBtn: false
+            });
+        });
+
         function sendTimeToBot() {
-            let selectedTime = document.getElementById("timePicker").value;
-            
+            let selectedTime = $('#timePicker').val();
             if (selectedTime) {
-                // Отправляем выбранное время обратно в наш Python-код!
                 tg.sendData(selectedTime);
             } else {
-                tg.showAlert("Пожалуйста, выберите время!");
+                tg.showAlert("Выберите время!");
             }
         }
     </script>
