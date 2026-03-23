@@ -11,56 +11,58 @@
             --cls-cyan: #0ff;
             --cls-blue: #007bff;
             --cls-purple: #bd00ff;
-            --cls-dark: #0a0a0c;
-            /* Цвета темы ТГ (для совместимости) */
+            /* Нативный фон ТГ (для матового стекла) */
             --tg-theme-bg: var(--tg-theme-bg-color, #ffffff);
             --tg-theme-text: var(--tg-theme-text-color, #000000);
             --tg-theme-hint: var(--tg-theme-hint-color, #999999);
+            --tg-theme-sec-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
 
         body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             text-align: center; 
-            /* Если тема светлая, делаем фон ТГ, если темная - наш кастомный неон */
-            background: var(--tg-theme-bg-color, var(--cls-dark));
-            color: var(--tg-theme-text-color, #ffffff);
+            /* Делаем фон прозрачным, чтобы видеть фон чата! */
+            background: transparent;
+            color: var(--tg-theme-text);
             margin: 0; padding: 20px; 
             overflow: hidden; user-select: none;
             display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100vh;
         }
 
         /* Заголовок с неоновой тенью */
-        h2 { margin-top: 10px; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; color: var(--tg-theme-hint, var(--cls-cyan)); text-shadow: 0 0 10px var(--cls-cyan); }
+        h2 { margin-top: 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--tg-theme-hint, var(--cls-cyan)); text-shadow: 0 0 10px var(--cls-cyan); }
         
-        /* Табло времени: Футуристичный шрифт и пульсация */
+        /* Табло времени: Шрифт, как на айфоне, и пульсация */
         .time-display {
-            font-size: 80px; font-weight: 800; font-family: 'Courier New', monospace;
-            color: #fff; text-shadow: 0 0 20px var(--cls-purple), 0 0 40px var(--cls-purple);
+            font-size: 80px; font-weight: 200; /* Легкий шрифт */
+            color: var(--tg-theme-text);
+            text-shadow: 0 0 20px rgba(189, 0, 255, 0.5); /* Плавный неон */
             cursor: pointer; transition: 0.2s;
-            margin: -20px 0 -10px 0;
+            margin: -10px 0 -10px 0;
+            font-feature-settings: "tnum"; /* Одинаковая ширина цифр */
         }
         .time-display:active { transform: scale(0.95); opacity: 0.8; }
-        .time-display .separator { animation: blink 1s steps(1) infinite; }
+        .time-display .separator { animation: blink 1s steps(1) infinite; margin: 0 -5px; }
         @keyframes blink { 50% { opacity: 0.2; } }
 
-        /* Контейнер часов (3D сцена) */
+        /* Контейнер часов */
         .clock-scene {
             position: relative; width: 300px; height: 300px;
-            perspective: 800px; /* Эффект 3D перспективы */
             margin: 0 auto;
         }
 
         /* Стеклянный циферблат (Glassmorphism) */
         .clock-face { 
             position: absolute; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.03); /* Матовое стекло */
+            /* Берет вторичный фон ТГ и делает его полупрозрачным */
+            background: var(--tg-theme-sec-bg);
+            opacity: 0.9; /* Прозрачность стекла */
             border-radius: 50%; 
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 30px rgba(255,255,255,0.05);
-            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-            transform-style: preserve-3d;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
         }
 
         /* Центральная неоновая точка */
@@ -68,67 +70,57 @@
             position: absolute; width: 6px; height: 6px; 
             background: #fff; border-radius: 50%; 
             left: 50%; top: 50%; transform: translate(-50%, -50%);
-            box-shadow: 0 0 15px var(--cls-cyan), 0 0 30px var(--cls-cyan);
+            box-shadow: 0 0 15px var(--cls-cyan);
             z-index: 10;
         }
 
-        /* Цифры: Крупные, неоновые, с 3D-вращением при клике */
+        /* Цифры */
         .number { 
             position: absolute; width: 48px; height: 48px; border-radius: 50%; 
             line-height: 48px; text-align: center; 
-            font-size: 18px; font-weight: bold; font-family: 'Courier New', monospace;
-            color: rgba(255,255,255,0.6);
-            cursor: pointer; transition: all 0.3s ease, transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            font-size: 18px; font-weight: 500;
+            color: var(--tg-theme-hint, rgba(0,0,0,0.6));
+            cursor: pointer; transition: all 0.2s ease;
             z-index: 5;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* ТУТ МАГИЯ: Разворачиваем цифры обратно! */
+        .number-inner {
+            display: block;
+            transform: rotate(calc(var(--angle) * -1));
         }
 
         /* Эффект наведения и выбора */
         .number.selected {
-            color: #fff;
+            color: #fff !important;
             background: var(--cls-blue);
             box-shadow: 0 0 15px var(--cls-blue), 0 0 30px var(--cls-blue);
-            transform: scale(1.15) translateZ(10px); /* Выходит в 3D */
-            border: 1px solid #fff;
-        }
-        .number:not(.selected):active {
-            background: rgba(255,255,255,0.1);
-            color: var(--cls-cyan);
-            text-shadow: 0 0 10px var(--cls-cyan);
-            transform: scale(1.1);
+            transform: scale(1.1); 
         }
 
-        /* Эффекты перехода режимов */
-        .clock-face.rotate-hours { transform: rotateY(0deg); }
-        .clock-face.rotate-minutes { transform: rotateY(180deg); } /* Вращение барабана */
-        
-        /* Задняя сторона барабана (минуты) */
-        .minutes-side { display: none; }
-        .clock-face.rotate-minutes .minutes-side { display: block; }
-        .clock-face.rotate-minutes .hours-side { display: none; }
-
-        /* Футуристичная кнопка */
+        /* Кнопка */
         .btn-confirm { 
             margin-top: 10px; margin-bottom: 10px;
             background: linear-gradient(135deg, var(--cls-blue), var(--cls-purple));
             color: #fff; border: none; padding: 16px; 
             font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
             border-radius: 14px; width: 100%; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3), 0 0 20px rgba(0,123,255,0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1), 0 0 20px rgba(0,123,255,0.3);
             transition: 0.2s;
         }
-        .btn-confirm:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(0,0,0,0.2); opacity: 0.9; }
+        .btn-confirm:active { transform: scale(0.97); opacity: 0.9; }
     </style>
 </head>
 <body>
 
-    <h2 id="header-label">GATHER SQUAD</h2>
+    <h2 id="header-label">SET START TIME</h2>
     <div class="time-display" id="display" onclick="switchMode('hours')">
         <span id="h_val">19</span><span class="separator">:</span><span id="m_val">00</span>
     </div>
     
     <div class="clock-scene">
-        <div class="clock-face rotate-hours" id="clock">
+        <div class="clock-face" id="clock">
             <div class="center-dot"></div>
             </div>
     </div>
@@ -138,6 +130,7 @@
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
+        tg.ready();
 
         let currentHour = 19;
         let currentMinute = 0;
@@ -154,15 +147,10 @@
 
         function switchMode(newMode) {
             if (mode === newMode) return;
-            tg.HapticFeedback.impactOccurred('medium'); // Вибрация при смене режима
+            tg.HapticFeedback.impactOccurred('medium'); 
             mode = newMode;
-            header.innerText = mode === 'hours' ? 'GATHER SQUAD' : 'SET LOBBY TIME';
-            
-            // Запускаем 3D анимацию вращения
-            clock.className = `clock-face rotate-${mode}`;
-            
-            // Отрисовываем цифры с задержкой, чтобы не видно было смены в процессе вращения
-            setTimeout(drawClock, 150);
+            header.innerText = mode === 'hours' ? 'SET START TIME' : 'SET LOBBY MINUTES';
+            drawClock();
         }
 
         function drawClock() {
@@ -170,30 +158,33 @@
             let values = [];
             
             if (mode === 'hours') {
-                // 24 часа: два круга
                 for (let i = 0; i < 24; i++) {
-                    let r = i < 12 ? 75 : 110; 
+                    let r = i < 12 ? 75 : 110; // Два круга
                     let angle = (i % 12) * 30 - 90;
                     values.push({v: i, r: r, a: angle});
                 }
             } else {
-                // Минуты: шаг в 5 мин
                 for (let i = 0; i < 60; i += 5) {
-                    // Зеркалим угол, так как сторона перевернута на 180 градусов
-                    values.push({v: i, r: 110, a: (i * 6 - 90) * -1});
+                    values.push({v: i, r: 110, a: i * 6 - 90});
                 }
             }
 
             values.forEach(item => {
                 let num = document.createElement('div');
                 num.className = 'number';
+                
+                // Передаем угол в CSS, чтобы развернуть цифру
+                num.style.setProperty('--angle', `${item.a + 90}deg`); 
+
                 if ((mode === 'hours' && currentHour === item.v) || (mode === 'minutes' && currentMinute === item.v)) {
                     num.classList.add('selected');
                 }
-                num.innerText = item.v.toString().padStart(2, '0');
+                
+                // Оборачиваем цифру во внутренний div
+                num.innerHTML = `<span class="number-inner">${item.v.toString().padStart(2, '0')}</span>`;
                 
                 let rad = item.a * (Math.PI / 180);
-                // Математика расстановки (учитываем размер контейнера и отступы цифр)
+                // Размещаем цифру (центр 150х150, размер цифры 48х48)
                 let x = 150 + item.r * Math.cos(rad) - 24;
                 let y = 150 + item.r * Math.sin(rad) - 24;
                 
@@ -201,15 +192,15 @@
                 num.style.top = y + 'px';
                 
                 num.onclick = () => {
-                    tg.HapticFeedback.impactOccurred('light'); // Вибрация при клике на цифру
+                    tg.HapticFeedback.impactOccurred('light'); 
                     if (mode === 'hours') {
                         currentHour = item.v;
                         updateDisplay();
-                        switchMode('minutes'); // Авто-переключение на минуты
+                        switchMode('minutes'); 
                     } else {
                         currentMinute = item.v;
                         updateDisplay();
-                        drawClock(); // Перерисовать для подсветки
+                        drawClock(); 
                     }
                 };
                 clock.appendChild(num);
@@ -217,13 +208,13 @@
         }
 
         function sendTime() {
-            tg.HapticFeedback.notificationOccurred('success'); // Вибрация успеха
+            tg.HapticFeedback.notificationOccurred('success'); 
             let h = currentHour.toString().padStart(2, '0');
             let m = currentMinute.toString().padStart(2, '0');
             tg.sendData(`${h}:${m}`);
         }
 
-        drawClock(); // Рисуем часы при старте
+        drawClock();
     </script>
 </body>
 </html>
