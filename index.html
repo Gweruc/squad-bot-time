@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Выбор времени</title>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <link href="https://cdn.jsdelivr.net/gh/dmuy/MDTimePicker@v2.0.0/mdtimepicker.min.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/dmuy/MDTimePicker@v2.0.0/mdtimepicker.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/mdtimepicker@2.0.2/dist/mdtimepicker.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mdtimepicker@2.0.2/dist/mdtimepicker.min.js"></script>
     
     <style>
         body {
@@ -20,9 +20,9 @@
         }
         
         #timePicker {
-            font-size: 30px;
+            font-size: 32px;
             padding: 15px 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             border: 2px solid var(--tg-theme-button-color, #3390ec);
             text-align: center;
             cursor: pointer;
@@ -30,6 +30,7 @@
             background: var(--tg-theme-secondary-bg-color, #f4f4f5);
             color: var(--tg-theme-text-color, #000000);
             width: 150px;
+            outline: none;
         }
         
         button {
@@ -41,6 +42,7 @@
             border-radius: 12px;
             cursor: pointer;
             width: 100%;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -54,21 +56,21 @@
     <button onclick="sendTimeToBot()">Подтвердить</button>
 
     <script>
+        // Говорим Телеграму растянуть окно
         let tg = window.Telegram.WebApp;
         tg.expand(); 
 
-        // Запускаем отрисовку круглого циферблата (24-часовой формат)
-        $(document).ready(function(){
-            $('#timePicker').mdtimepicker({
-                is24hour: true,
-                format: 'hh:mm',
-                theme: 'blue',
-                clearBtn: false
-            });
+        // Запускаем отрисовку циферблата (чистый JS)
+        mdtimepicker('#timePicker', {
+            is24hour: true,
+            format: 'hh:mm',
+            theme: 'blue',
+            clearBtn: false
         });
 
+        // Отправка в бота
         function sendTimeToBot() {
-            let selectedTime = $('#timePicker').val();
+            let selectedTime = document.getElementById('timePicker').value;
             if (selectedTime) {
                 tg.sendData(selectedTime);
             } else {
