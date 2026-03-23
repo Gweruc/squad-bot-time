@@ -6,35 +6,121 @@
     <title>Выбор времени</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); margin: 0; padding: 20px; touch-action: manipulation; }
-        h2 { margin-top: 10px; font-size: 22px; }
+        :root {
+            --tg-color: var(--tg-theme-button-color, #3390ec);
+            --tg-bg: var(--tg-theme-bg-color, #ffffff);
+            --tg-text: var(--tg-theme-text-color, #000000);
+            --tg-hint: var(--tg-theme-hint-color, #999999);
+            --tg-sec-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            text-align: center; 
+            background: var(--tg-bg); 
+            color: var(--tg-text); 
+            margin: 0; 
+            padding: 20px; 
+            overflow: hidden;
+            user-select: none;
+        }
+
+        h2 { margin-top: 5px; font-size: 20px; color: var(--tg-hint); font-weight: 500; }
         
-        /* Поле с выбранным временем (кликабельно) */
-        #display { font-size: 45px; font-weight: bold; color: var(--tg-theme-button-color, #3390ec); margin: 10px 0 30px 0; cursor: pointer; }
-        
-        /* Сам круг */
-        .clock { position: relative; width: 260px; height: 260px; background: var(--tg-theme-secondary-bg-color, #f0f0f0); border-radius: 50%; margin: 0 auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
-        .center-dot { position: absolute; width: 10px; height: 10px; background: var(--tg-theme-button-color, #3390ec); border-radius: 50%; left: 125px; top: 125px; }
-        
-        /* Цифры на круге */
-        .number { position: absolute; width: 40px; height: 40px; border-radius: 50%; line-height: 40px; text-align: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.1s; }
-        .number:active { background: var(--tg-theme-button-color, #3390ec); color: #ffffff; transform: scale(1.1); }
-        
+        /* Главное табло с пульсацией */
+        #display { 
+            font-size: 56px; 
+            font-weight: 600; 
+            color: var(--tg-color); 
+            margin: 15px 0 30px 0; 
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        #display:active { transform: scale(0.95); }
+
+        /* Контейнер часов */
+        .clock-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+        }
+
+        .clock-face { 
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--tg-sec-bg); 
+            border-radius: 50%; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .center-dot { 
+            position: absolute; 
+            width: 8px; 
+            height: 8px; 
+            background: var(--tg-color); 
+            border-radius: 50%; 
+            left: 50%; 
+            top: 50%; 
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        /* Стильные цифры */
+        .number { 
+            position: absolute; 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; 
+            line-height: 42px; 
+            text-align: center; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+            z-index: 5;
+        }
+
+        .number.selected {
+            background: var(--tg-color);
+            color: white !important;
+            box-shadow: 0 0 15px var(--tg-color);
+            transform: scale(1.15);
+        }
+
+        /* Эффект переключения */
+        .fade-out { opacity: 0; transform: scale(0.8); }
+        .fade-in { opacity: 1; transform: scale(1); }
+
         /* Кнопка */
-        .btn { margin-top: 40px; background: var(--tg-theme-button-color, #3390ec); color: var(--tg-theme-button-text-color, #ffffff); border: none; padding: 15px; font-size: 20px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
+        .btn { 
+            margin-top: 40px; 
+            background: var(--tg-color); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            font-size: 18px; 
+            border-radius: 14px; 
+            width: 100%; 
+            font-weight: 600; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Во сколько старт?</h2>
+    <h2 id="header-label">Выберите час</h2>
+    <div id="display" onclick="switchMode('hours')">19:00</div>
     
-    <div id="display" onclick="setMode('hours')">19:00</div>
-    
-    <div class="clock" id="clock">
-        <div class="center-dot"></div>
+    <div class="clock-container">
+        <div class="clock-face" id="clock">
+            <div class="center-dot"></div>
+        </div>
     </div>
     
-    <button class="btn" onclick="sendTime()">✅ Подтвердить</button>
+    <button class="btn" onclick="sendTime()">Готово</button>
 
     <script>
         let tg = window.Telegram.WebApp;
@@ -42,82 +128,80 @@
 
         let currentHour = 19;
         let currentMinute = 0;
-        let mode = 'hours'; // Сначала выбираем часы, потом минуты
-        let clock = document.getElementById('clock');
-        let display = document.getElementById('display');
+        let mode = 'hours';
+        const clock = document.getElementById('clock');
+        const display = document.getElementById('display');
+        const header = document.getElementById('header-label');
 
         function updateDisplay() {
-            let h = currentHour.toString().padStart(2, '0');
-            let m = currentMinute.toString().padStart(2, '0');
-            display.innerText = `${h}:${m}`;
+            display.innerText = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
         }
 
-        function setMode(newMode) {
-            mode = newMode;
-            drawClock();
+        function switchMode(newMode) {
+            if (mode === newMode) return;
+            clock.classList.add('fade-out');
+            setTimeout(() => {
+                mode = newMode;
+                header.innerText = mode === 'hours' ? 'Выберите час' : 'Выберите минуты';
+                drawClock();
+                clock.classList.remove('fade-out');
+                clock.classList.add('fade-in');
+            }, 200);
         }
 
-        // Рисуем цифры по кругу
         function drawClock() {
-            // Очищаем старые цифры, оставляем только точку по центру
             clock.innerHTML = '<div class="center-dot"></div>';
-            
             let values = [];
+            let radius = 110;
+            
             if (mode === 'hours') {
-                // Внешний круг (12-23 часа) и внутренний круг (0-11 часов)
-                values = [
-                    {v:0, r:100, a:-90}, {v:13, r:100, a:-60}, {v:14, r:100, a:-30}, {v:15, r:100, a:0},
-                    {v:16, r:100, a:30}, {v:17, r:100, a:60}, {v:18, r:100, a:90}, {v:19, r:100, a:120},
-                    {v:20, r:100, a:150}, {v:21, r:100, a:180}, {v:22, r:100, a:210}, {v:23, r:100, a:240},
-                    
-                    {v:12, r:60, a:-90}, {v:1, r:60, a:-60}, {v:2, r:60, a:-30}, {v:3, r:60, a:0},
-                    {v:4, r:60, a:30}, {v:5, r:60, a:60}, {v:6, r:60, a:90}, {v:7, r:60, a:120},
-                    {v:8, r:60, a:150}, {v:9, r:60, a:180}, {v:10, r:60, a:210}, {v:11, r:60, a:240}
-                ];
+                for (let i = 0; i < 24; i++) {
+                    let r = i < 12 ? 75 : 110; // Внутренний и внешний круги
+                    let angle = (i % 12) * 30 - 90;
+                    values.push({v: i, r: r, a: angle});
+                }
             } else {
-                // Минуты (с шагом в 5)
-                values = [
-                    {v:0, r:100, a:-90}, {v:5, r:100, a:-60}, {v:10, r:100, a:-30}, {v:15, r:100, a:0},
-                    {v:20, r:100, a:30}, {v:25, r:100, a:60}, {v:30, r:100, a:90}, {v:35, r:100, a:120},
-                    {v:40, r:100, a:150}, {v:45, r:100, a:180}, {v:50, r:100, a:210}, {v:55, r:100, a:240}
-                ];
+                for (let i = 0; i < 60; i += 5) {
+                    values.push({v: i, r: 110, a: i * 6 - 90});
+                }
             }
 
-            // Математика расстановки цифр
             values.forEach(item => {
                 let num = document.createElement('div');
                 num.className = 'number';
-                num.innerText = item.v.toString().padStart(2, '0');
+                if ((mode === 'hours' && currentHour === item.v) || (mode === 'minutes' && currentMinute === item.v)) {
+                    num.classList.add('selected');
+                }
+                num.innerText = item.v.toString();
                 
                 let rad = item.a * (Math.PI / 180);
-                let x = 110 + item.r * Math.cos(rad);
-                let y = 110 + item.r * Math.sin(rad);
+                let x = 140 + item.r * Math.cos(rad) - 21;
+                let y = 140 + item.r * Math.sin(rad) - 21;
                 
                 num.style.left = x + 'px';
                 num.style.top = y + 'px';
                 
-                // Действие по клику на цифру
                 num.onclick = () => {
+                    if (window.TapticEngine) tg.HapticFeedback.impactOccurred('light');
                     if (mode === 'hours') {
                         currentHour = item.v;
-                        setMode('minutes'); // Переключаем на минуты
+                        updateDisplay();
+                        switchMode('minutes');
                     } else {
                         currentMinute = item.v;
+                        updateDisplay();
+                        drawClock(); // Перерисовать для подсветки выбранной минуты
                     }
-                    updateDisplay();
                 };
                 clock.appendChild(num);
             });
         }
 
-        // Отправка в бота
         function sendTime() {
-            let h = currentHour.toString().padStart(2, '0');
-            let m = currentMinute.toString().padStart(2, '0');
-            tg.sendData(`${h}:${m}`);
+            tg.HapticFeedback.notificationOccurred('success');
+            tg.sendData(display.innerText);
         }
 
-        // Рисуем часы при старте
         drawClock();
     </script>
 </body>
